@@ -6,7 +6,7 @@ import UserAuth from '../components/auth/UserAuth';
 import StaffAuth from '../components/auth/StaffAuth';
 import UserDashboard from '../components/dashboards/UserDashboard';
 import AdminDashboard from '../components/dashboards/AdminDashboard';
-import HRDashboard from '../components/dashboards/HRDashboard';
+import HRDashboard from '../components/dashboards/HrDashboard';
 import { fetchPdfAndCreateUrl } from '../components/shared/pdfHelper';
 
 export default function Home() {
