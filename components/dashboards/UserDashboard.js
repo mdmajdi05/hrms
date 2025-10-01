@@ -1,8 +1,8 @@
-'use client';
 import { useState, useEffect } from 'react';
-import {CandidateForm} from './CandidateForm.js';
-import { fetchPdfAndCreateUrl } from '../app/page-old.js'
-function UserDashboard({ user, onMessage, onBack }) {
+import CandidateForm from '../forms/CandidateForm';
+import { fetchPdfAndCreateUrl } from '../shared/pdfHelper';
+
+export default function UserDashboard({ user, onMessage, onBack }) {
   const [submissions, setSubmissions] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [previewing, setPreviewing] = useState(false);
@@ -141,4 +141,3 @@ function UserDashboard({ user, onMessage, onBack }) {
     </div>
   );
 }
-export default UserDashboard;

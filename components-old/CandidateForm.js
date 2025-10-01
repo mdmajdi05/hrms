@@ -1,10 +1,8 @@
 ﻿function CandidateForm({ onSuccess, onError }) {
   const [formData, setFormData] = useState({
-    title: '',
     fullName: '',
     email: '',
     phone: '',
-    countryCode: '+91',
     qualification: '',
     experienceYears: '',
     skills: '',
@@ -149,34 +147,22 @@
       <h4>📋 Candidate Registration Form</h4>
 
       <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: '15px', display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <div style={{ width: '120px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Title</label>
-            <select value={formData.title} onChange={(e) => handleInputChange('title', e.target.value)} style={{ padding: '10px', width: '100%', border: '1px solid #ddd', borderRadius: '4px' }}>
-              <option value="">Select</option>
-              <option value="Mr">Mr</option>
-              <option value="Mrs">Mrs</option>
-              <option value="Miss">Miss</option>
-              <option value="Dr">Dr</option>
-            </select>
-          </div>
-          <div style={{ flex: 1 }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Full Name *</label>
-            <input
-              type="text"
-              value={formData.fullName}
-              onChange={(e) => handleInputChange('fullName', e.target.value)}
-              placeholder="Enter your full name"
-              required
-              style={{
-                padding: '10px',
-                width: '100%',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                boxSizing: 'border-box'
-              }}
-            />
-          </div>
+        <div style={{ marginBottom: '15px' }}>
+          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Full Name *</label>
+          <input
+            type="text"
+            value={formData.fullName}
+            onChange={(e) => handleInputChange('fullName', e.target.value)}
+            placeholder="Enter your full name"
+            required
+            style={{
+              padding: '10px',
+              width: '100%',
+              border: '1px solid #ddd',
+              borderRadius: '4px',
+              boxSizing: 'border-box'
+            }}
+          />
         </div>
 
         <div style={{ display: 'flex', gap: '15px', marginBottom: '15px' }}>
@@ -198,29 +184,19 @@
           </div>
           <div style={{ flex: 1 }}>
             <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Phone</label>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <select value={formData.countryCode} onChange={(e) => handleInputChange('countryCode', e.target.value)} style={{ padding: '10px', border: '1px solid #ddd', borderRadius: '4px', width: '120px' }}>
-                <option value="+91">+91 (IN)</option>
-                <option value="+1">+1 (US)</option>
-                <option value="+44">+44 (UK)</option>
-                <option value="+61">+61 (AU)</option>
-                <option value="+92">+92 (PK)</option>
-                <option value="+971">+971 (AE)</option>
-              </select>
-              <input
-                type="tel"
-                value={formData.phone}
-                onChange={(e) => handleInputChange('phone', e.target.value)}
-                placeholder="Enter your phone number"
-                style={{
-                  padding: '10px',
-                  flex: 1,
-                  border: '1px solid #ddd',
-                  borderRadius: '4px',
-                  boxSizing: 'border-box'
-                }}
-              />
-            </div>
+            <input
+              type="tel"
+              value={formData.phone}
+              onChange={(e) => handleInputChange('phone', e.target.value)}
+              placeholder="Enter your phone number"
+              style={{
+                padding: '10px',
+                width: '100%',
+                border: '1px solid #ddd',
+                borderRadius: '4px',
+                boxSizing: 'border-box'
+              }}
+            />
           </div>
         </div>
 

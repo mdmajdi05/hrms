@@ -1,10 +1,614 @@
-﻿function CandidateForm({ onSuccess, onError }) {
+﻿'use client';
+import { useState, useEffect } from 'react';
+import Header from '../components-old/Header';
+import Footer from '../components-old/Footer';
+import UserDashboard from '../components-old/UserDashboard';
+import HrDashboard from '../components-old/HrDashboard';
+import AdminDashboard from '../components-old/AdminDashboard';
+
+
+// Simple Header component with navigation
+<Header />,
+
+// Simple Footer component
+
+<Footer />
+
+// Shared PDF helper used by dashboards/components to fetch the PDF bytes
+// and produce an object URL. Accepts an onMessage callback for error reporting.
+export const fetchPdfAndCreateUrl = async (id, onMessage) => {
+  try {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`/api/download/${id}`, {
+      headers: { Authorization: 'Bearer ' + token }
+    });
+    if (!res.ok) throw new Error('Failed to fetch PDF');
+  const buf = await res.arrayBuffer();
+  const blob = new Blob([buf], { type: 'application/pdf' });
+  const url = URL.createObjectURL(blob);
+  return { url, blob };
+  } catch (err) {
+    if (typeof onMessage === 'function') onMessage('❌ ' + err.message, 'error');
+    return null;
+  }
+};
+
+export default function Home() {
+  const [currentView, setCurrentView] = useState('home');
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const role = localStorage.getItem('role');
+    const username = localStorage.getItem('username');
+    if (token && role && username) {
+      setUser({ token, role, username });
+      if (role === 'user') setCurrentView('userDashboard');
+      else if (role === 'admin') setCurrentView('adminDashboard');
+      else if (role === 'hr') setCurrentView('hrDashboard');
+    }
+  }, []);
+
+  const showHome = () => setCurrentView('home');
+  const showUser = () => setCurrentView('user');
+  const showStaff = () => setCurrentView('staff');
+
+  const logout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    localStorage.removeItem('username');
+    setUser(null);
+    setCurrentView('home');
+    setMessage('Logged out successfully');
+  };
+
+  const showMessage = (msg, type = 'info') => {
+    setMessage(msg);
+    setTimeout(() => setMessage(''), 3000);
+  };
+
+  return (
+    <div style={{ fontFamily: 'Arial, sans-serif', padding: '20px', backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
+      <div style={{ maxWidth: '1000px', margin: '12px auto' }}>
+        <Header user={user} onNavigate={(v) => setCurrentView(v)} onLogout={logout} />
+
+        <div style={{ border: '1px solid #ddd', padding: '20px', borderRadius: '8px', maxWidth: '900px', margin: '20px auto', backgroundColor: 'white', boxShadow: '0 2px 10px rgba(0,0,0,0.1)' }}>
+
+          {message && (
+            <div style={{ padding: '10px', margin: '10px 0', borderRadius: '4px', backgroundColor: message.includes('success') ? '#d4edda' : '#f8d7da', color: message.includes('success') ? '#155724' : '#721c24', border: `1px solid ${message.includes('success') ? '#c3e6cb' : '#f5c6cb'}` }}>
+              {message}
+            </div>
+          )}
+
+          {user && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', padding: '10px', backgroundColor: '#f8f9fa', borderRadius: '6px' }}>
+              <span>Welcome, <strong>{user.username}</strong> ({user.role})</span>
+              <button onClick={logout} style={{ padding: '8px 16px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Logout</button>
+            </div>
+          )}
+
+          {currentView === 'home' && (
+            <div id="home">
+              <section style={{ textAlign: 'center', padding: '40px 10px' }}>
+                <h1 style={{ fontSize: '28px', marginBottom: '12px' }}>Welcome to Simple Candidate System</h1>
+                <p style={{ color: '#555', maxWidth: '720px', margin: '0 auto 20px' }}>Apply easily, HR/Admin can review applications, preview and download submissions as PDF. Built for quick demos and small teams.</p>
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginTop: '18px' }}>
+                  <button onClick={showUser} style={{ padding: '14px 26px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '16px' }}>👤 User Portal</button>
+                  <button onClick={showStaff} style={{ padding: '14px 26px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '16px' }}>👥 Staff Portal</button>
+                </div>
+              </section>
+            </div>
+          )}
+
+          {currentView === 'user' && !user && (
+            <UserAuth onLogin={(userData) => { setUser(userData); setCurrentView('userDashboard'); showMessage('Login successful!', 'success'); }} onMessage={showMessage} />
+          )}
+
+          {currentView === 'userDashboard' && user && user.role === 'user' && (
+            <UserDashboard user={user} onMessage={showMessage} onBack={showHome} />
+          )}
+
+          {currentView === 'staff' && !user && (
+            <StaffAuth onLogin={(userData) => { setUser(userData); if (userData.role === 'admin') setCurrentView('adminDashboard'); else setCurrentView('hrDashboard'); showMessage('Login successful!', 'success'); }} onMessage={showMessage} />
+          )}
+
+          {currentView === 'adminDashboard' && user && user.role === 'admin' && (
+            <AdminDashboard user={user} onMessage={showMessage} onBack={showHome} />
+          )}
+
+          {currentView === 'hrDashboard' && user && user.role === 'hr' && (
+            <HrDashboard user={user} onMessage={showMessage} onBack={showHome} />
+          )}
+
+          {(currentView === 'user' || currentView === 'staff') && !user && (
+            <button onClick={showHome} style={{ padding: '8px 16px', marginTop: '20px', backgroundColor: '#6c757d', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>← Back</button>
+          )}
+
+        </div>
+
+        <Footer />
+      </div>
+    </div>
+  );
+}
+
+// User Authentication Component
+function UserAuth({ onLogin, onMessage }) {
+  const [mode, setMode] = useState('auth');
+  const [loading, setLoading] = useState(false);
+
+  const registerUser = async (username, password) => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/auth/register-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        onMessage('✅ Registration successful! Please login.', 'success');
+        setMode('login');
+      } else {
+        onMessage(`❌ ${data.error}`, 'error');
+      }
+    } catch (error) {
+      onMessage('❌ Network error', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loginUser = async (username, password) => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/auth/login-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('role', data.role);
+        localStorage.setItem('username', data.username);
+        onLogin(data);
+      } else {
+        onMessage(`❌ ${data.error}`, 'error');
+      }
+    } catch (error) {
+      onMessage('❌ Network error', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div>
+      <h3>👤 User Portal</h3>
+
+      {mode === 'auth' && (
+        <div id="userAuth" style={{ textAlign: 'center', margin: '30px 0' }}>
+          <button
+            onClick={() => setMode('register')}
+            style={{
+              padding: '12px 20px',
+              margin: '10px',
+              backgroundColor: '#007bff',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '16px'
+            }}
+          >
+            📝 Register
+          </button>
+          <button
+            onClick={() => setMode('login')}
+            style={{
+              padding: '12px 20px',
+              margin: '10px',
+              backgroundColor: '#28a745',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '16px'
+            }}
+          >
+            🔐 Login
+          </button>
+        </div>
+      )}
+
+      {mode === 'register' && (
+        <UserRegisterForm
+          onSubmit={registerUser}
+          loading={loading}
+          onBack={() => setMode('auth')}
+        />
+      )}
+
+      {mode === 'login' && (
+        <UserLoginForm
+          onSubmit={loginUser}
+          loading={loading}
+          onBack={() => setMode('auth')}
+        />
+      )}
+    </div>
+  );
+}
+
+// User Registration Form Component
+function UserRegisterForm({ onSubmit, loading, onBack }) {
+  const [formData, setFormData] = useState({ username: '', password: '' });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!formData.username || !formData.password) {
+      alert('Please fill all fields');
+      return;
+    }
+    onSubmit(formData.username, formData.password);
+  };
+
+  return (
+    <div style={{ maxWidth: '400px', margin: '0 auto' }}>
+      <h4>Create New Account</h4>
+      <form onSubmit={handleSubmit}>
+        <input
+          type="text"
+          placeholder="Enter username"
+          value={formData.username}
+          onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+          required
+          style={{
+            padding: '12px',
+            width: '100%',
+            margin: '10px 0',
+            border: '1px solid #ddd',
+            borderRadius: '4px',
+            boxSizing: 'border-box',
+            fontSize: '16px'
+          }}
+        />
+        <input
+          type="password"
+          placeholder="Enter password"
+          value={formData.password}
+          onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+          required
+          style={{
+            padding: '12px',
+            width: '100%',
+            margin: '10px 0',
+            border: '1px solid #ddd',
+            borderRadius: '4px',
+            boxSizing: 'border-box',
+            fontSize: '16px'
+          }}
+        />
+        <div style={{ marginTop: '20px' }}>
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              padding: '12px 24px',
+              backgroundColor: loading ? '#6c757d' : '#007bff',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              marginRight: '10px',
+              fontSize: '16px'
+            }}
+          >
+            {loading ? 'Creating...' : 'Create Account'}
+          </button>
+          <button
+            type="button"
+            onClick={onBack}
+            style={{
+              padding: '12px 24px',
+              backgroundColor: '#6c757d',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '16px'
+            }}
+          >
+            ← Back
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+// User Login Form Component
+function UserLoginForm({ onSubmit, loading, onBack }) {
+  const [formData, setFormData] = useState({ username: '', password: '' });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!formData.username || !formData.password) {
+      alert('Please fill all fields');
+      return;
+    }
+    onSubmit(formData.username, formData.password);
+  };
+
+  return (
+    <div style={{ maxWidth: '400px', margin: '0 auto' }}>
+      <h4>Login to Your Account</h4>
+      <form onSubmit={handleSubmit}>
+        <input
+          type="text"
+          placeholder="Enter username"
+          value={formData.username}
+          onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+          required
+          style={{
+            padding: '12px',
+            width: '100%',
+            margin: '10px 0',
+            border: '1px solid #ddd',
+            borderRadius: '4px',
+            boxSizing: 'border-box',
+            fontSize: '16px'
+          }}
+        />
+        <input
+          type="password"
+          placeholder="Enter password"
+          value={formData.password}
+          onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+          required
+          style={{
+            padding: '12px',
+            width: '100%',
+            margin: '10px 0',
+            border: '1px solid #ddd',
+            borderRadius: '4px',
+            boxSizing: 'border-box',
+            fontSize: '16px'
+          }}
+        />
+        <div style={{ marginTop: '20px' }}>
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              padding: '12px 24px',
+              backgroundColor: loading ? '#6c757d' : '#28a745',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              marginRight: '10px',
+              fontSize: '16px'
+            }}
+          >
+            {loading ? 'Logging in...' : 'Login'}
+          </button>
+          <button
+            type="button"
+            onClick={onBack}
+            style={{
+              padding: '12px 24px',
+              backgroundColor: '#6c757d',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '16px'
+            }}
+          >
+            ← Back
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+// Staff Authentication Component
+function StaffAuth({ onLogin, onMessage }) {
+  const [staffRole, setStaffRole] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const loginStaff = async (username, password) => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/auth/login-staff', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: staffRole, username, password })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('role', data.role);
+        localStorage.setItem('username', data.username);
+        onLogin(data);
+      } else {
+        onMessage(`❌ ${data.error}`, 'error');
+      }
+    } catch (error) {
+      onMessage('❌ Network error', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!staffRole) {
+    return (
+      <div>
+        <h3>👥 Staff Portal</h3>
+        <div style={{ textAlign: 'center', margin: '40px 0' }}>
+          <button
+            onClick={() => setStaffRole('admin')}
+            style={{
+              padding: '15px 30px',
+              margin: '10px',
+              backgroundColor: '#dc3545',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '16px',
+              fontWeight: 'bold'
+            }}
+          >
+            👑 Admin Login
+          </button>
+          <button
+            onClick={() => setStaffRole('hr')}
+            style={{
+              padding: '15px 30px',
+              margin: '10px',
+              backgroundColor: '#ffc107',
+              color: 'black',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '16px',
+              fontWeight: 'bold'
+            }}
+          >
+            💼 HR Login
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <StaffLoginForm
+      role={staffRole}
+      onSubmit={loginStaff}
+      loading={loading}
+      onBack={() => setStaffRole(null)}
+    />
+  );
+}
+
+// Staff Login Form Component
+function StaffLoginForm({ role, onSubmit, loading, onBack }) {
+  const [formData, setFormData] = useState({ username: '', password: '' });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!formData.username || !formData.password) {
+      alert('Please fill all fields');
+      return;
+    }
+    onSubmit(formData.username, formData.password);
+  };
+
+  const title = role === 'admin' ? '👑 Admin Login' : '💼 HR Login';
+
+  return (
+    <div style={{ maxWidth: '400px', margin: '0 auto' }}>
+      <h4>{title}</h4>
+      <form onSubmit={handleSubmit}>
+        <input
+          type="text"
+          placeholder="Enter username"
+          value={formData.username}
+          onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+          required
+          style={{
+            padding: '12px',
+            width: '100%',
+            margin: '10px 0',
+            border: '1px solid #ddd',
+            borderRadius: '4px',
+            boxSizing: 'border-box',
+            fontSize: '16px'
+          }}
+        />
+        <input
+          type="password"
+          placeholder="Enter password"
+          value={formData.password}
+          onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+          required
+          style={{
+            padding: '12px',
+            width: '100%',
+            margin: '10px 0',
+            border: '1px solid #ddd',
+            borderRadius: '4px',
+            boxSizing: 'border-box',
+            fontSize: '16px'
+          }}
+        />
+        <div style={{ marginTop: '20px' }}>
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              padding: '12px 24px',
+              backgroundColor: loading ? '#6c757d' : (role === 'admin' ? '#dc3545' : '#ffc107'),
+              color: role === 'admin' ? 'white' : 'black',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              marginRight: '10px',
+              fontSize: '16px'
+            }}
+          >
+            {loading ? 'Logging in...' : 'Login'}
+          </button>
+          <button
+            type="button"
+            onClick={onBack}
+            style={{
+              padding: '12px 24px',
+              backgroundColor: '#6c757d',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '16px'
+            }}
+          >
+            ← Back
+          </button>
+        </div>
+      </form>
+      {role === 'admin' && (
+        <div style={{ marginTop: '15px', padding: '10px', backgroundColor: '#fff3cd', borderRadius: '4px' }}>
+          <strong>Default Admin Credentials:</strong><br />
+          Username: <code>admin</code><br />
+          Password: <code>admin123</code>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// User Dashboard Component
+<UserDashboard />,
+
+// Candidate Form Component
+function CandidateForm({ onSuccess, onError }) {
   const [formData, setFormData] = useState({
-    title: '',
     fullName: '',
     email: '',
     phone: '',
-    countryCode: '+91',
     qualification: '',
     experienceYears: '',
     skills: '',
@@ -149,34 +753,22 @@
       <h4>📋 Candidate Registration Form</h4>
 
       <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: '15px', display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <div style={{ width: '120px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Title</label>
-            <select value={formData.title} onChange={(e) => handleInputChange('title', e.target.value)} style={{ padding: '10px', width: '100%', border: '1px solid #ddd', borderRadius: '4px' }}>
-              <option value="">Select</option>
-              <option value="Mr">Mr</option>
-              <option value="Mrs">Mrs</option>
-              <option value="Miss">Miss</option>
-              <option value="Dr">Dr</option>
-            </select>
-          </div>
-          <div style={{ flex: 1 }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Full Name *</label>
-            <input
-              type="text"
-              value={formData.fullName}
-              onChange={(e) => handleInputChange('fullName', e.target.value)}
-              placeholder="Enter your full name"
-              required
-              style={{
-                padding: '10px',
-                width: '100%',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                boxSizing: 'border-box'
-              }}
-            />
-          </div>
+        <div style={{ marginBottom: '15px' }}>
+          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Full Name *</label>
+          <input
+            type="text"
+            value={formData.fullName}
+            onChange={(e) => handleInputChange('fullName', e.target.value)}
+            placeholder="Enter your full name"
+            required
+            style={{
+              padding: '10px',
+              width: '100%',
+              border: '1px solid #ddd',
+              borderRadius: '4px',
+              boxSizing: 'border-box'
+            }}
+          />
         </div>
 
         <div style={{ display: 'flex', gap: '15px', marginBottom: '15px' }}>
@@ -198,29 +790,19 @@
           </div>
           <div style={{ flex: 1 }}>
             <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Phone</label>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <select value={formData.countryCode} onChange={(e) => handleInputChange('countryCode', e.target.value)} style={{ padding: '10px', border: '1px solid #ddd', borderRadius: '4px', width: '120px' }}>
-                <option value="+91">+91 (IN)</option>
-                <option value="+1">+1 (US)</option>
-                <option value="+44">+44 (UK)</option>
-                <option value="+61">+61 (AU)</option>
-                <option value="+92">+92 (PK)</option>
-                <option value="+971">+971 (AE)</option>
-              </select>
-              <input
-                type="tel"
-                value={formData.phone}
-                onChange={(e) => handleInputChange('phone', e.target.value)}
-                placeholder="Enter your phone number"
-                style={{
-                  padding: '10px',
-                  flex: 1,
-                  border: '1px solid #ddd',
-                  borderRadius: '4px',
-                  boxSizing: 'border-box'
-                }}
-              />
-            </div>
+            <input
+              type="tel"
+              value={formData.phone}
+              onChange={(e) => handleInputChange('phone', e.target.value)}
+              placeholder="Enter your phone number"
+              style={{
+                padding: '10px',
+                width: '100%',
+                border: '1px solid #ddd',
+                borderRadius: '4px',
+                boxSizing: 'border-box'
+              }}
+            />
           </div>
         </div>
 
@@ -506,5 +1088,11 @@
       )}
     </div>
   );
-}
-export default CandidateForm;
+},
+
+// Admin Dashboard Component
+
+<AdminDashboard />,
+
+// HR Dashboard Component - FIXED VERSION
+<HrDashboard />
