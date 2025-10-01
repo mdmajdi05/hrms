@@ -2,7 +2,7 @@ export default function Header({ user, onNavigate, onLogout }) {
   return (
     <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 24px', background: 'linear-gradient(90deg, #0d6efd 0%, #6610f2 100%)', color: 'white', borderRadius: '8px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-        <div style={{ fontWeight: 800, fontSize: '20px' }}>🌟 CareerDoc</div>
+        <div style={{ fontWeight: 800, fontSize: '20px' }}>🌟 HRMS</div>
         <div style={{ color: 'rgba(255,255,255,0.85)', fontSize: '14px' }}>Hire faster. Manage better.</div>
       </div>
 
